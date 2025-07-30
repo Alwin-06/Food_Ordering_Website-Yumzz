@@ -31,6 +31,11 @@ const createRestaurant = asyncHandler(async (req, res) => {
         throw new Error('Not authorized to create a restaurant');
     }
 
+    const existingRestaurant = await Restaurant.findOne({ owner: ownerId });
+    if (existingRestaurant) {
+        res.status(400);
+        throw new Error('This owner already has a restaurant. Each owner can only create one restaurant.');
+    }
 
     const restaurant = await Restaurant.create({
         name,

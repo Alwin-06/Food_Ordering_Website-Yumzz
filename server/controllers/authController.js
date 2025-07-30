@@ -3,6 +3,9 @@ const User = require('../models/User');
 const jwt = require('jsonwebtoken');
 const { body, validationResult } = require('express-validator');
 
+/**
+ * Generate JWT token
+ */
 const generateToken = (id, role) => {
     try {
         return jwt.sign({ id, role }, process.env.JWT_SECRET, {
@@ -10,9 +13,10 @@ const generateToken = (id, role) => {
         });
     } catch (error) {
         console.log(error);
-        throw new Error('Token creation failed', error);
+        throw new Error('Token creation failed');
     }
 };
+
 /**
  * @desc    Register a new user
  * @route   POST /api/auth/register
@@ -79,9 +83,10 @@ const loginUser = asyncHandler(async (req, res) => {
 
         res.cookie('token', token, {
             httpOnly: true,
-            secure: false,
+            secure: process.env.NODE_ENV === 'production',
             sameSite: 'lax',
-            maxAge: 7 * 24 * 60 * 60 * 1000,
+            path: '/',
+            maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
         });
 
         res.json({
@@ -104,7 +109,13 @@ const loginUser = asyncHandler(async (req, res) => {
  * @access  Public
  */
 const logoutUser = asyncHandler(async (req, res) => {
-    res.clearCookie('token');
+    res.cookie('token', '', {
+        httpOnly: true,
+        expires: new Date(0), // Sets expiration to a past date
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        path: '/',
+    });
     res.status(200).json({ message: 'Logged out successfully' });
 });
 

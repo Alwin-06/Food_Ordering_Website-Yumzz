@@ -21,15 +21,6 @@ const createReview = asyncHandler(async (req, res) => {
         throw new Error('Restaurant not found');
     }
 
-    // const alreadyReviewed = await Review.findOne({
-    //     user: req.user._id,
-    //     restaurant: restaurantId,
-    // });
-    // if (alreadyReviewed) {
-    //     res.status(400);
-    //     throw new Error('You have already reviewed this restaurant');
-    // }
-
     const review = await Review.create({
         user: req.user._id,
         restaurant: restaurantId,

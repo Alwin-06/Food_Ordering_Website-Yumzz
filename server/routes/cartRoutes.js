@@ -11,6 +11,7 @@ const { body } = require('express-validator');
 
 const router = express.Router();
 
+// Use sessionAuth instead of JWT-based protect middleware
 router.get('/', protect, getCart);
 
 router.post(
@@ -35,9 +36,9 @@ router.put(
 );
 
 router.delete(
-    '/remove-item',
+    '/remove-item/:menuItemId',
     protect,
-    [body('menuItemId').notEmpty().withMessage('Menu item ID is required')],
+    //[body('menuItemId').notEmpty().withMessage('Menu item ID is required')],
     removeItemFromCart
 );
 

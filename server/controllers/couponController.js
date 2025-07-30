@@ -128,10 +128,62 @@ const deleteCoupon = asyncHandler(async (req, res) => {
     }
 });
 
+const applyCouponHandler = asyncHandler(async (req, res) => {
+    const { couponCode, orderTotal } = req.body;
+
+    if (!couponCode) {
+        res.status(400);
+        throw new Error("Coupon code is required.");
+    }
+
+    const coupon = await Coupon.findOne({ code: couponCode.toUpperCase() });
+
+    if (!coupon || !coupon.isActive) {
+        res.status(400);
+        throw new Error("Invalid or inactive coupon.");
+    }
+
+    if (coupon.expiryDate < new Date()) {
+        res.status(400);
+        throw new Error("Coupon has expired.");
+    }
+
+    if (coupon.usedCount >= coupon.usageLimit) {
+        res.status(400);
+        throw new Error("Coupon usage limit reached.");
+    }
+
+    if (orderTotal && orderTotal < coupon.minOrderValue) {
+        res.status(400);
+        throw new Error(`Minimum order value should be ₹${coupon.minOrderValue}`);
+    }
+
+    // You could optionally calculate discount:
+    let discountAmount = 0;
+    if (coupon.type === 'percentage') {
+        discountAmount = (orderTotal * coupon.discount) / 100;
+    } else {
+        discountAmount = coupon.discount;
+    }
+
+    res.json({
+        success: true,
+        message: "Coupon applied successfully",
+        discount: discountAmount,
+        coupon: {
+            code: coupon.code,
+            type: coupon.type,
+            discount: coupon.discount,
+        }
+    });
+});
+
+
 module.exports = {
     createCoupon,
     getCoupons,
     getCouponByCode,
     updateCoupon,
     deleteCoupon,
+    applyCouponHandler,
 };

@@ -22,6 +22,7 @@ const getCart = asyncHandler(async (req, res) => {
  * @access  Private (User)
  */
 const addItemToCart = asyncHandler(async (req, res) => {
+
     const { menuItemId, quantity, restaurantId } = req.body;
 
     if (!menuItemId || !quantity || !restaurantId) {
@@ -129,12 +130,13 @@ const updateCartItemQuantity = asyncHandler(async (req, res) => {
  * @access  Private (User)
  */
 const removeItemFromCart = asyncHandler(async (req, res) => {
-    const { menuItemId } = req.body;
+    //const { menuItemId } = req.body;
+    const { menuItemId } = req.params; // <-- Get ID from URL parameters
 
-    if (!menuItemId) {
-        res.status(400);
-        throw new Error('Please provide menuItemId');
-    }
+    // if (!menuItemId) {
+    //     res.status(400);
+    //     throw new Error('Please provide menuItemId');
+    // }
 
     const cart = await Cart.findOne({ userId: req.user._id });
 
@@ -152,7 +154,10 @@ const removeItemFromCart = asyncHandler(async (req, res) => {
     }
 
     if (cart.items.length === 0) {
-        cart.restaurantId = null;
+        await Cart.findByIdAndDelete(cart._id);
+        // Respond with a success message or an empty object.
+        return res.status(200).json({ message: 'Cart cleared successfully' });
+        //cart.restaurantId = null;
     }
 
     await cart.save();

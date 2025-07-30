@@ -5,6 +5,7 @@ const {
     getCouponByCode,
     updateCoupon,
     deleteCoupon,
+    applyCouponHandler,
 } = require('../controllers/couponController');
 const { protect } = require('../middleware/authMiddleware');
 const authorizeRoles = require('../middleware/authorizeRoles');
@@ -13,7 +14,11 @@ const { body, param } = require('express-validator');
 const router = express.Router();
 
 const couponValidation = [
-    body('code').notEmpty().withMessage('Coupon code is required').trim().toUpperCase(),
+    //body('code').notEmpty().withMessage('Coupon code is required').trim().toUpperCase(),
+    body('code')
+    .notEmpty().withMessage('Coupon code is required')
+    .trim()
+    .customSanitizer(value => value.toUpperCase()),
     body('type').isIn(['percentage', 'fixedAmount']).withMessage('Coupon type must be "percentage" or "fixedAmount"'),
     body('discount').isFloat({ min: 0 }).withMessage('Discount must be a non-negative number'),
     body('minOrderValue').optional().isFloat({ min: 0 }).withMessage('Minimum order value must be a non-negative number'),
@@ -25,7 +30,7 @@ const couponValidation = [
 router
     .route('/')
     .post(protect, authorizeRoles('admin'), couponValidation, createCoupon)
-    .get(protect, authorizeRoles('admin'), getCoupons);
+    .get(protect,authorizeRoles('admin', 'user'), getCoupons);
 
 router.get('/:code', getCouponByCode);
 
@@ -34,5 +39,6 @@ router
     .put(protect, authorizeRoles('admin'), couponValidation, updateCoupon)
     .delete(protect, authorizeRoles('admin'), deleteCoupon);
 
+router.post('/apply', protect, authorizeRoles('admin', 'user'), applyCouponHandler);
 
 module.exports = router;

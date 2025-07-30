@@ -17,9 +17,48 @@ const getUserProfile = asyncHandler(async (req, res) => {
             email: user.email,
             phoneNo: user.phoneNo,
             role: user.role,
+            addresses: user.addresses,
             createdAt: user.createdAt,
             updatedAt: user.updatedAt,
         });
+    } else {
+        res.status(404);
+        throw new Error('User not found');
+    }
+});
+
+/**
+ * @desc    Add a new address to user profile
+ * @route   POST /api/users/profile/address
+ * @access  Private
+ */
+const addAddressToProfile = asyncHandler(async (req, res) => {
+    const user = await User.findById(req.user._id);
+
+    if (user) {
+
+        if (!user.addresses) {
+            user.addresses = [];
+        }
+
+        const newAddress = {
+            fullAddress: req.body.fullAddress,
+            landmark: req.body.landmark,
+            pincode: req.body.pincode,
+            contactNumber: req.body.contactNumber,
+            type: req.body.type,
+            isDefault: req.body.isDefault,
+        };
+
+        if (newAddress.isDefault) {
+            user.addresses.forEach(addr => { addr.isDefault = false; });
+        }
+        
+        user.addresses.push(newAddress);
+        await user.save();
+        
+        res.status(201).json(user.addresses); // Return the updated addresses array
+
     } else {
         res.status(404);
         throw new Error('User not found');
@@ -78,7 +117,71 @@ const updateUserProfile = asyncHandler(async (req, res) => {
     }
 });
 
+const getAllUsers = asyncHandler(async (req, res) => {
+    const users = await User.find({}).select('-password'); // Fetch all users, exclude password
+    res.json(users);
+});
+
+/**
+ * @desc    Delete an address from user profile
+ * @route   DELETE /api/users/profile/address/:addressId
+ * @access  Private
+ */
+const deleteAddress = asyncHandler(async (req, res) => {
+    const user = await User.findById(req.user._id);
+
+    if (user) {
+        const addressIdToDelete = req.params.addressId;
+        const address = user.addresses.id(addressIdToDelete);
+
+        if (!address) {
+            res.status(404);
+            throw new Error('Address not found');
+        }
+
+        address.remove();
+        await user.save();
+        res.status(200).json(user.addresses);
+    } else {
+        res.status(404);
+        throw new Error('User not found');
+    }
+});
+
+/**
+ * @desc    Set an address as the default
+ * @route   PUT /api/users/profile/default-address
+ * @access  Private
+ */
+const setDefaultAddress = asyncHandler(async (req, res) => {
+    const user = await User.findById(req.user._id);
+    const { addressId } = req.body;
+
+    if (user) {
+        const addressToSetDefault = user.addresses.id(addressId);
+        if (!addressToSetDefault) {
+            res.status(404);
+            throw new Error('Address not found');
+        }
+
+        // Set all other addresses to not be default
+        user.addresses.forEach(addr => {
+            addr.isDefault = addr._id.toString() === addressId;
+        });
+
+        await user.save();
+        res.status(200).json(user.addresses);
+    } else {
+        res.status(404);
+        throw new Error('User not found');
+    }
+});
+
 module.exports = {
     getUserProfile,
     updateUserProfile,
+    getAllUsers,
+    addAddressToProfile,
+    deleteAddress,
+    setDefaultAddress,
 };

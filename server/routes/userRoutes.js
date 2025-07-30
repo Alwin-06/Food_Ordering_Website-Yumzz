@@ -2,8 +2,13 @@ const express = require('express');
 const {
     getUserProfile,
     updateUserProfile,
+    getAllUsers,
+    addAddressToProfile,
+    deleteAddress,
+    setDefaultAddress,
 } = require('../controllers/userController');
 const { protect } = require('../middleware/authMiddleware');
+const authorizeRoles = require('../middleware/authorizeRoles');
 const { body } = require('express-validator');
 
 const router = express.Router();
@@ -24,5 +29,12 @@ router
     .route('/profile')
     .get(protect, getUserProfile)
     .put(protect, userProfileUpdateValidation, updateUserProfile);
+
+router.route('/profile/address').post(protect, addAddressToProfile);
+
+router.get('/all', protect, authorizeRoles('admin'), getAllUsers);
+
+router.route('/profile/address/:addressId').delete(protect, deleteAddress);
+router.route('/profile/default-address').put(protect, setDefaultAddress);
 
 module.exports = router;
